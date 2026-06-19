@@ -6,14 +6,14 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "AI App",
-  description: "Next.js AI app with server-side API calls",
+  title: "Work Damage Report",
+  description: "Щоденний звіт про вплив робочого дня на твою енергію та фокус.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-gray-50">
+    <html lang="uk" className={`${geist.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
         <Navbar />
         {children}
       </body>

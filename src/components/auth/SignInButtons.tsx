@@ -1,19 +1,22 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/Button";
 
 export function SignInButtons() {
   return (
     <div className="flex flex-col gap-3">
-      <Button
-        variant="secondary"
-        className="w-full gap-2"
+      <button
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+        style={{
+          backgroundColor: "var(--bg-card-2)",
+          border: "1px solid var(--border)",
+          color: "var(--text)",
+        }}
         onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
       >
         <GitHubIcon />
-        Continue with GitHub
-      </Button>
+        Продовжити з GitHub
+      </button>
     </div>
   );
 }

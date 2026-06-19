@@ -1,26 +1,128 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #08080d;
+  --bg-card: #111118;
+  --bg-card-2: #18181f;
+  --bg-input: #1c1c25;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-accent: rgba(124, 106, 255, 0.35);
+  --text: #e4e4f0;
+  --text-muted: #6a6a8a;
+  --text-dim: #3a3a55;
+  --accent: #7c6aff;
+  --accent-2: #a78bfa;
+  --accent-glow: rgba(124, 106, 255, 0.18);
+  --green: #22c55e;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --red: #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
+
+/* ── Range input ─────────────────────────────────── */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--bg-card-2);
+  border-radius: 9999px;
+  height: 6px;
+  border: 1px solid var(--border);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--accent);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 12px var(--accent-glow);
+  transition: box-shadow 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 20px rgba(124, 106, 255, 0.5);
+}
+
+input[type="range"]::-moz-range-track {
+  background: var(--bg-card-2);
+  border-radius: 9999px;
+  height: 6px;
+  border: 1px solid var(--border);
+}
+
+input[type="range"]::-moz-range-thumb {
+  background: var(--accent);
+  border: 3px solid var(--bg);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* ── Animations ──────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+  50%       { box-shadow: 0 0 40px rgba(124, 106, 255, 0.35); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+.card-glow {
+  box-shadow: 0 0 0 1px var(--border), 0 4px 24px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 0.2s;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 0 1px var(--border-accent), 0 4px 32px rgba(124, 106, 255, 0.12);
+}
+
+.card-accent-border {
+  box-shadow: 0 0 0 1px var(--border-accent), 0 4px 32px rgba(124, 106, 255, 0.1);
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg-card-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
