@@ -10,7 +10,7 @@ export type ChatRequest = {
 export type WDRFactor = {
   name: string;
   percentage: number;
-  emoji: string;
+  emoji?: string;
 };
 
 export type WDRAnalysis = {

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { DashboardContent } from "@/components/wdr/DashboardContent";
 import type { MoodEntryDisplay, DashboardMetrics, DashboardInsight } from "@/types";
 
+const vt = { fontFamily: "var(--font-vt323), 'Courier New', monospace" };
+
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
@@ -42,7 +44,7 @@ export default async function DashboardPage() {
   const metrics = computeMetrics(entries);
   const showWarning = checkWarningBanner(entries);
   const meetingsCounter = entries.filter((e) =>
-    e.annoyances.includes("📅 Багато зустрічей")
+    e.annoyances.some((a) => a.includes("Багато зустрічей"))
   ).length;
   const insights = computeInsights(entries, metrics);
 
@@ -50,23 +52,15 @@ export default async function DashboardPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-8 pb-16">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
-            Dashboard
+          <h1 className="font-pixel" style={{ fontSize: "14px", color: "var(--text)", lineHeight: 2 }}>
+            DASHBOARD
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+          <p style={{ ...vt, fontSize: "20px", color: "var(--text-muted)", marginTop: "2px" }}>
             Останні 30 днів · {session.user.name ?? session.user.email}
           </p>
         </div>
-        <Link
-          href="/"
-          className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
-          style={{
-            backgroundColor: "var(--accent)",
-            color: "white",
-            boxShadow: "0 0 16px rgba(124,106,255,0.25)",
-          }}
-        >
-          + Чекін
+        <Link href="/" className="pixel-btn pixel-btn-cta" style={{ fontSize: "10px", padding: "10px 20px" }}>
+          + CHECKIN
         </Link>
       </div>
       <DashboardContent

@@ -17,7 +17,7 @@ const vt323 = VT323({
 
 export const metadata: Metadata = {
   title: "Work Damage Report",
-  description: "Щоденний звіт про вплив робочого дня на твою енергію та фокус.",
+  description: "Daily report on how work impacts your energy and focus.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

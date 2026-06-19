@@ -1,336 +1,272 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { WDRAnalysis } from "@/types";
 
 const ACTION_META = {
-  focus:     { label: "FOCUS TIME",    desc: "Protect your deep work hours" },
-  priority:  { label: "PRIORITIZE",   desc: "Align on what matters now" },
-  recovery:  { label: "RECOVERY",     desc: "Recharge before tomorrow" },
-  boundaries:{ label: "SET LIMITS",   desc: "Communicate your capacity" },
+  focus:      { label: "ФОКУС-ЧАС",          color: "#2c3e7a" },
+  priority:   { label: "ПРІОРИТИЗАЦІЯ ЗАДАЧ", color: "#F39C12" },
+  recovery:   { label: "ПЛАН ВІДНОВЛЕННЯ",    color: "#27AE60" },
+  boundaries: { label: "ВСТАНОВЛЕННЯ МЕЖ",    color: "#9B59B6" },
 };
 
-function barColor(pct: number): string {
-  if (pct <= 30) return "#4cca6a";
-  if (pct <= 60) return "#ffd700";
-  if (pct <= 80) return "#ff9800";
-  return "#e94560";
+const vt = { fontFamily: "var(--font-vt323), 'Courier New', monospace" };
+
+function barColor(pct: number) {
+  if (pct <= 30) return "#27AE60";
+  if (pct <= 60) return "#F39C12";
+  if (pct <= 80) return "#e67e22";
+  return "#E74C3C";
 }
 
-function scoreLabel(score: number) {
-  if (score <= 20) return { label: "LIGHT DAY",    color: "#4cca6a" };
-  if (score <= 40) return { label: "MANAGEABLE",   color: "#4cca6a" };
-  if (score <= 60) return { label: "ROUGH",        color: "#ffd700" };
-  if (score <= 80) return { label: "HEAVY",        color: "#ff9800" };
-  return                  { label: "!! CRITICAL !!", color: "#e94560" };
+function scoreInfo(score: number) {
+  if (score <= 20) return { label: "ЛЕГКИЙ ДЕНЬ",  color: "#27AE60" };
+  if (score <= 40) return { label: "НОРМАЛЬНО",    color: "#27AE60" };
+  if (score <= 60) return { label: "НАПРУЖЕНО",    color: "#F39C12" };
+  if (score <= 80) return { label: "ВАЖКО",        color: "#e67e22" };
+  return               { label: "НУ І ДЕНЬОК...", color: "#E74C3C" };
 }
 
-/* ── Typewriter hook ─────────────────────────────── */
-function useTypewriter(text: string, speed = 22) {
-  const [displayed, setDisplayed] = useState("");
+function useTypewriter(text: string, speed = 25) {
+  const [out, setOut] = useState("");
   useEffect(() => {
-    setDisplayed("");
+    setOut("");
     let i = 0;
     const id = setInterval(() => {
       i++;
-      setDisplayed(text.slice(0, i));
+      setOut(text.slice(0, i));
       if (i >= text.length) clearInterval(id);
     }, speed);
     return () => clearInterval(id);
   }, [text, speed]);
-  return displayed;
+  return out;
 }
 
-/* ── Pixel HP bar ────────────────────────────────── */
-function PixelHPBar({ percentage }: { percentage: number }) {
-  const total = 20;
-  const filled = Math.round((percentage / 100) * total);
-  const color = barColor(percentage);
-  return (
-    <div style={{ display: "flex", gap: "2px" }}>
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            flex: 1,
-            height: "12px",
-            backgroundColor: i < filled ? color : "#0f3460",
-            border: "1px solid #000",
-            boxShadow: i < filled ? `0 0 4px ${color}60` : "none",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ── XP bar for damage score ─────────────────────── */
 function XPBar({ score }: { score: number }) {
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => setWidth(score), 300);
-    return () => clearTimeout(t);
-  }, [score]);
-
+  const [w, setW] = useState(0);
+  useEffect(() => { const t = setTimeout(() => setW(score), 300); return () => clearTimeout(t); }, [score]);
   const color = barColor(score);
   return (
-    <div
-      style={{
-        position: "relative",
-        height: "28px",
-        backgroundColor: "#0f3460",
-        border: "3px solid var(--border)",
-        boxShadow: "4px 4px 0px #000",
-      }}
-    >
-      <div
-        style={{
-          width: `${width}%`,
-          height: "100%",
-          backgroundColor: color,
-          transition: "width 1.8s steps(20)",
-          boxShadow: `0 0 8px ${color}80`,
-        }}
-      />
-      <div
-        className="font-pixel"
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "8px",
-          color: "#fff",
-          textShadow: "1px 1px 0px #000",
-        }}
-      >
+    <div style={{ position: "relative", height: "36px", background: "#bbb", border: "4px solid #2C3E50", boxShadow: "4px 4px 0px #000" }}>
+      <div style={{ width: `${w}%`, height: "100%", background: color, transition: "width 1.8s steps(20)" }} />
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", ...vt, fontSize: "22px", color: "#fff", textShadow: "1px 1px 0px #000" }}>
         {score} / 100 DAMAGE
       </div>
     </div>
   );
 }
 
-/* ── Toast ───────────────────────────────────────── */
-function PixelToast({ show }: { show: boolean }) {
-  if (!show) return null;
+function HPBar({ pct }: { pct: number }) {
+  const total = 20;
+  const filled = Math.round((pct / 100) * total);
+  const color = barColor(pct);
   return (
-    <div
-      className="font-pixel"
-      style={{
-        position: "fixed",
-        bottom: "24px",
-        right: "24px",
-        fontSize: "9px",
-        backgroundColor: "#0f3460",
-        border: "3px solid #4cca6a",
-        boxShadow: "4px 4px 0px #000",
-        padding: "12px 16px",
-        color: "#4cca6a",
-        animation: "toastIn 0.2s ease-out",
-        zIndex: 100,
-      }}
-    >
-      +1 COPIED TO CLIPBOARD ✓
+    <div style={{ display: "flex", gap: "2px" }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} style={{ flex: 1, height: "14px", background: i < filled ? color : "#ccc", border: "1px solid #2C3E50" }} />
+      ))}
     </div>
   );
 }
 
-/* ── Main component ──────────────────────────────── */
+function Toast({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div className="font-pixel" style={{ position: "fixed", bottom: "24px", right: "24px", background: "#FFF8DC", border: "4px solid #27AE60", boxShadow: "4px 4px 0px #000", padding: "12px 18px", fontSize: "10px", color: "#27AE60", animation: "toastIn 0.2s ease-out", zIndex: 100 }}>
+      СКОПІЙОВАНО
+    </div>
+  );
+}
+
+function WDRChatWidget({ analysis }: { analysis: WDRAnalysis }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, open]);
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+    const userMsg = { role: "user" as const, content: input.trim() };
+    const next = [...messages, userMsg];
+    setMessages(next);
+    setInput("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/wdr-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next, context: analysis }),
+      });
+      const data = await res.json();
+      setMessages([...next, { role: "assistant", content: data.content }]);
+    } catch {
+      setMessages([...next, { role: "assistant", content: "Помилка. Спробуй ще раз." }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="pixel-card space-y-3" style={{ border: "4px solid #2c3e7a", boxShadow: "5px 5px 0px #000" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h3 className="font-pixel" style={{ fontSize: "10px", color: "#2c3e7a" }}>ПОГОВОРИТИ З AI</h3>
+        <button className="pixel-btn" style={{ fontSize: "9px", padding: "6px 14px" }} onClick={() => setOpen(!open)}>
+          {open ? "ЗАКРИТИ" : "ВІДКРИТИ ЧАТ"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="space-y-2">
+          <div style={{ height: "300px", overflowY: "auto", border: "3px solid var(--border)", background: "#fff", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            {messages.length === 0 && (
+              <p style={{ ...vt, fontSize: "20px", color: "var(--text-dim)", textAlign: "center", marginTop: "20px" }}>
+                Запитай про сьогоднішній день...
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                <div style={{
+                  maxWidth: "80%", padding: "10px 14px",
+                  border: "3px solid #2C3E50",
+                  background: m.role === "user" ? "#FFF8DC" : "#e0f0ff",
+                  boxShadow: "3px 3px 0px #2C3E50",
+                  ...vt, fontSize: "20px", lineHeight: 1.5,
+                }}>
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{ padding: "10px 14px", border: "3px solid #2C3E50", background: "#e0f0ff", boxShadow: "3px 3px 0px #2C3E50" }}>
+                  <span className="blink font-pixel" style={{ fontSize: "9px" }}>ДУМАЮ...</span>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+          <form onSubmit={send} style={{ display: "flex", gap: "8px" }}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Напиши питання..."
+              disabled={loading}
+              className="pixel-input"
+              style={{ flex: 1 }}
+            />
+            <button type="submit" disabled={loading || !input.trim()}
+              className="pixel-btn pixel-btn-cta"
+              style={{ fontSize: "10px", padding: "10px 16px" }}>
+              SEND
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DamageReport({ analysis }: { analysis: WDRAnalysis }) {
   const [copied, setCopied] = useState(false);
-  const culpritText = useTypewriter(analysis.culprit, 28);
+  const culprit = useTypewriter(analysis.culprit, 30);
   const action = ACTION_META[analysis.actionType] ?? ACTION_META.focus;
-  const { label, color } = scoreLabel(analysis.damageScore);
+  const { label, color } = scoreInfo(analysis.damageScore);
 
-  function handleCopy() {
+  function copy() {
     navigator.clipboard.writeText(analysis.slackMessage).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3500);
+      setCopied(true); setTimeout(() => setCopied(false), 3500);
     });
   }
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <PixelToast show={copied} />
+      <Toast show={copied} />
 
-      {/* Score header */}
-      <div className="pixel-card text-center space-y-4" style={{ border: `3px solid ${color}` }}>
-        <p className="font-pixel" style={{ color: "var(--text-muted)", fontSize: "8px" }}>
-          *** DAMAGE REPORT GENERATED ***
-        </p>
-        <p
-          className="font-pixel"
-          style={{ fontSize: "40px", color, textShadow: `0 0 20px ${color}80`, lineHeight: 1 }}
-        >
-          {analysis.damageScore}
-        </p>
-        <p className="font-pixel" style={{ color, fontSize: "10px" }}>{label}</p>
-
+      {/* Score */}
+      <div className="pixel-card text-center space-y-4" style={{ border: `4px solid ${color}`, boxShadow: `6px 6px 0px #000` }}>
+        <p className="font-pixel" style={{ fontSize: "9px", color: "#666" }}>DAMAGE REPORT</p>
+        <div style={{ fontSize: "72px", color, lineHeight: 1, ...vt, textShadow: `3px 3px 0px #000` }}>
+          {analysis.damageScore}<span style={{ fontSize: "36px", color: "#888" }}>%</span>
+        </div>
+        <p style={{ ...vt, fontSize: "28px", color }}>{label}</p>
         {analysis.damageScore > 80 && (
-          <div
-            className="font-pixel blink"
-            style={{
-              border: `3px solid #e94560`,
-              padding: "8px",
-              color: "#e94560",
-              fontSize: "9px",
-            }}
-          >
-            !! WARNING: CRITICAL DAMAGE DETECTED !!
+          <div className="blink" style={{ border: `3px solid #E74C3C`, padding: "8px 16px", ...vt, fontSize: "22px", color: "#E74C3C" }}>
+            ! КРИТИЧНЕ НАВАНТАЖЕННЯ — ЗУПИНИСЬ
           </div>
         )}
-
         <XPBar score={analysis.damageScore} />
       </div>
 
       {/* Factors */}
       <div className="pixel-card space-y-4">
-        <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
-          &gt; DAMAGE FACTORS
-        </p>
-        {analysis.factors.map((factor, i) => (
+        <h3 className="font-pixel" style={{ fontSize: "10px", color: "#333", borderBottom: "2px solid #2C3E50", paddingBottom: "8px" }}>
+          ОСНОВНІ ФАКТОРИ
+        </h3>
+        {analysis.factors.map((f, i) => (
           <div key={i} className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span
-                style={{
-                  fontFamily: "var(--font-vt323), 'Courier New', monospace",
-                  fontSize: "18px",
-                  color: "var(--text)",
-                }}
-              >
-                {factor.emoji} {factor.name}
-              </span>
-              <span
-                className="font-pixel"
-                style={{ fontSize: "9px", color: barColor(factor.percentage) }}
-              >
-                {factor.percentage}%
-              </span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ ...vt, fontSize: "22px", color: "var(--text)" }}>{f.name}</span>
+              <span style={{ ...vt, fontSize: "24px", color: barColor(f.percentage) }}>{f.percentage}%</span>
             </div>
-            <PixelHPBar percentage={factor.percentage} />
+            <HPBar pct={f.percentage} />
           </div>
         ))}
       </div>
 
-      {/* Main factor + Culprit */}
+      {/* Main factor + culprit */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="pixel-card space-y-2">
-          <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "7px" }}>
-            &gt; MAIN FACTOR
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-vt323), 'Courier New', monospace",
-              fontSize: "20px",
-              color: "var(--text)",
-            }}
-          >
-            {analysis.mainFactor}
-          </p>
+          <p className="font-pixel" style={{ fontSize: "8px", color: "#555" }}>ГОЛОВНИЙ ФАКТОР</p>
+          <p style={{ ...vt, fontSize: "24px", color: "var(--text)" }}>{analysis.mainFactor}</p>
         </div>
-        <div className="pixel-card space-y-2" style={{ border: "3px solid var(--yellow)" }}>
-          <p className="font-pixel" style={{ color: "var(--yellow)", fontSize: "7px" }}>
-            &gt; ACHIEVEMENT UNLOCKED
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-vt323), 'Courier New', monospace",
-              fontSize: "18px",
-              color: "var(--yellow)",
-              minHeight: "60px",
-            }}
-          >
-            &ldquo;{culpritText}
-            <span className="blink">_</span>&rdquo;
+        <div className="pixel-card space-y-2" style={{ border: "4px solid #F39C12", boxShadow: "5px 5px 0px #000" }}>
+          <p className="font-pixel" style={{ fontSize: "8px", color: "#F39C12" }}>МЕМ ДНЯ</p>
+          <p style={{ ...vt, fontSize: "22px", color: "#333", lineHeight: 1.5 }}>
+            &ldquo;{culprit}<span className="blink">|</span>&rdquo;
           </p>
         </div>
       </div>
 
       {/* Recommendations */}
       <div className="pixel-card space-y-4">
-        <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
-          &gt; RECOMMENDED ACTIONS
-        </p>
-        <div className="space-y-3">
+        <h3 className="font-pixel" style={{ fontSize: "10px", color: "#333", borderBottom: "2px solid #2C3E50", paddingBottom: "8px" }}>
+          РЕКОМЕНДАЦІЇ
+        </h3>
+        <ol className="space-y-3">
           {analysis.recommendations.map((rec, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <span
-                className="font-pixel flex-shrink-0"
-                style={{
-                  fontSize: "8px",
-                  color: "#fff",
-                  backgroundColor: "var(--accent)",
-                  border: "2px solid #fff",
-                  boxShadow: "2px 2px 0px #000",
-                  padding: "2px 6px",
-                  minWidth: "28px",
-                  textAlign: "center",
-                }}
-              >
-                {String(i + 1).padStart(2, "0")}
+            <li key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+              <span className="font-pixel" style={{ fontSize: "9px", color: "#fff", background: "#E74C3C", border: "2px solid #111", boxShadow: "2px 2px 0px #000", padding: "4px 8px", flexShrink: 0, minWidth: "32px", textAlign: "center" }}>
+                {i + 1}
               </span>
-              <p
-                style={{
-                  fontFamily: "var(--font-vt323), 'Courier New', monospace",
-                  fontSize: "18px",
-                  color: "var(--text)",
-                  lineHeight: "1.4",
-                }}
-              >
-                {rec}
-              </p>
-            </div>
+              <p style={{ ...vt, fontSize: "22px", color: "var(--text)", lineHeight: 1.5 }}>{rec}</p>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
 
-      {/* Action message */}
-      <div className="pixel-card-accent space-y-4">
+      {/* Action / Slack message */}
+      <div className="pixel-card space-y-4" style={{ border: `4px solid ${action.color}`, boxShadow: "5px 5px 0px #000" }}>
         <div>
-          <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
-            &gt; MISSION: {action.label}
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-vt323), 'Courier New', monospace",
-              fontSize: "16px",
-              color: "var(--text-muted)",
-              marginTop: "4px",
-            }}
-          >
-            {action.desc}
-          </p>
+          <p className="font-pixel" style={{ fontSize: "8px", color: action.color }}>РЕКОМЕНДОВАНА ДІЯ</p>
+          <p style={{ ...vt, fontSize: "28px", color: action.color, marginTop: "4px" }}>{action.label}</p>
         </div>
-        <div
-          style={{
-            backgroundColor: "var(--bg-card-2)",
-            border: "3px solid var(--border)",
-            boxShadow: "inset 2px 2px 0px #000",
-            padding: "12px 14px",
-            fontFamily: "var(--font-vt323), 'Courier New', monospace",
-            fontSize: "18px",
-            color: "var(--text)",
-            lineHeight: "1.5",
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <div style={{ background: "#fff", border: "3px solid var(--border)", boxShadow: "inset 2px 2px 0px #ddd", padding: "14px 16px", ...vt, fontSize: "22px", color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
           {analysis.slackMessage}
         </div>
-        <button
-          onClick={handleCopy}
-          className="pixel-btn w-full"
-          style={{
-            fontSize: "9px",
-            padding: "12px",
-            borderColor: copied ? "#4cca6a" : "var(--border)",
-            color: copied ? "#4cca6a" : "var(--text)",
-            backgroundColor: copied ? "rgba(76,202,106,0.1)" : "var(--bg-card-2)",
-          }}
-        >
-          {copied ? "COPIED! GO GET COFFEE ☕" : "[ COPY TO CLIPBOARD ]"}
+        <button onClick={copy} className="pixel-btn w-full"
+          style={{ fontSize: "10px", padding: "14px", background: copied ? "#d5f5e3" : "var(--bg-card-2)", borderColor: copied ? "#27AE60" : "var(--border)", color: copied ? "#27AE60" : "var(--text)" }}>
+          {copied ? "СКОПІЙОВАНО" : "КОПІЮВАТИ"}
         </button>
       </div>
+
+      {/* Chat with AI */}
+      <WDRChatWidget analysis={analysis} />
     </div>
   );
 }

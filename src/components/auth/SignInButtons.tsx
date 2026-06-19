@@ -1,26 +1,83 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+const vt = { fontFamily: "var(--font-vt323), 'Courier New', monospace" };
 
 export function SignInButtons() {
-  return (
-    <div className="flex flex-col gap-3">
-      <button
-        className="pixel-btn w-full"
-        style={{ fontSize: "9px", padding: "14px" }}
-        onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
-      >
-        <GitHubIcon />
-        CONTINUE WITH GITHUB
-      </button>
-    </div>
-  );
-}
+  const router = useRouter();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-function GitHubIcon() {
+  async function handleCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const result = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError("INVALID EMAIL OR PASSWORD");
+      setIsLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
+  }
+
   return (
-    <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-    </svg>
+    <div className="space-y-4">
+      <form onSubmit={handleCredentials} className="space-y-3">
+        <div className="space-y-1">
+          <label className="font-pixel" style={{ fontSize: "8px", color: "#333", display: "block" }}>EMAIL</label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+            placeholder="you@example.com"
+            required
+            className="pixel-input"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="font-pixel" style={{ fontSize: "8px", color: "#333", display: "block" }}>PASSWORD</label>
+          <input
+            type="password"
+            value={form.password}
+            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+            placeholder="••••••••"
+            required
+            className="pixel-input"
+          />
+        </div>
+
+        {error && (
+          <div style={{ border: "3px solid #E74C3C", background: "#FFF8DC", padding: "10px 14px" }}>
+            <p className="font-pixel" style={{ fontSize: "9px", color: "#E74C3C" }}>{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="pixel-btn pixel-btn-cta w-full"
+          style={{ fontSize: "11px", padding: "16px", minHeight: "52px" }}
+        >
+          {isLoading ? <span className="blink">█ LOGGING IN...</span> : "▶ SIGN IN"}
+        </button>
+      </form>
+
+      <p className="font-pixel text-center" style={{ fontSize: "8px", color: "#666" }}>
+        No account?{" "}
+        <a href="/register" style={{ color: "#2c3e7a", textDecoration: "underline" }}>REGISTER HERE</a>
+      </p>
+    </div>
   );
 }

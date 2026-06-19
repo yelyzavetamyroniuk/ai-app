@@ -8,17 +8,14 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export function Button({ variant = "primary", isLoading, children, className = "", ...props }: Props) {
-  const variantClass = variant === "primary" ? "pixel-btn-primary" : "";
   return (
     <button
       {...props}
       disabled={props.disabled || isLoading}
-      className={`pixel-btn ${variantClass} ${className}`}
-      style={{ fontSize: "9px", ...props.style }}
+      className={`pixel-btn ${variant === "primary" ? "pixel-btn-cta" : ""} ${className}`}
+      style={{ fontSize: "15px", ...props.style }}
     >
-      {isLoading ? (
-        <span className="blink">█</span>
-      ) : null}
+      {isLoading && <span className="blink" style={{ marginRight: "6px" }}>█</span>}
       {children}
     </button>
   );

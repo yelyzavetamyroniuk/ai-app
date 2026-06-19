@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { Message } from "@/types";
-import { Button } from "@/components/ui/Button";
+
+const vt = { fontFamily: "var(--font-vt323), 'Courier New', monospace" };
 
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,10 +43,8 @@ export function Chat() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunk = decoder.decode(value);
         const lines = chunk.split("\n").filter((l) => l.startsWith("data:"));
-
         for (const line of lines) {
           const data = line.slice(5).trim();
           if (data === "[DONE]") break;
@@ -67,7 +66,7 @@ export function Chat() {
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." };
+        updated[updated.length - 1] = { role: "assistant", content: "Помилка. Спробуй ще раз." };
         return updated;
       });
     } finally {
@@ -76,38 +75,49 @@ export function Chat() {
   }
 
   return (
-    <div className="flex h-[600px] flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="pixel-card space-y-3" style={{ border: "4px solid #2c3e7a", boxShadow: "5px 5px 0px #000" }}>
+      <h2 className="font-pixel" style={{ fontSize: "10px", color: "#2c3e7a" }}>AI CHAT</h2>
+
+      <div style={{ height: "400px", overflowY: "auto", border: "3px solid var(--border)", background: "#fff", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
         {messages.length === 0 && (
-          <p className="text-center text-sm text-gray-400 mt-8">Start a conversation…</p>
+          <p style={{ ...vt, fontSize: "20px", color: "var(--text-dim)", textAlign: "center", marginTop: "30px" }}>
+            Почни розмову...
+          </p>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-900"
-              }`}
-            >
-              {msg.content || <span className="animate-pulse">▍</span>}
+          <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+            <div style={{
+              maxWidth: "78%", padding: "10px 14px",
+              border: "3px solid #2C3E50",
+              background: msg.role === "user" ? "#FFF8DC" : "#e0f0ff",
+              boxShadow: "3px 3px 0px #2C3E50",
+              ...vt, fontSize: "20px", lineHeight: 1.5,
+              whiteSpace: "pre-wrap",
+            }}>
+              {msg.content || <span className="blink font-pixel" style={{ fontSize: "9px" }}>█</span>}
             </div>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 p-4 flex gap-2">
+      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "8px" }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask anything…"
+          placeholder="Напиши повідомлення..."
           disabled={isLoading}
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="pixel-input"
+          style={{ flex: 1 }}
         />
-        <Button type="submit" isLoading={isLoading} disabled={!input.trim()}>
-          Send
-        </Button>
+        <button
+          type="submit"
+          disabled={isLoading || !input.trim()}
+          className="pixel-btn pixel-btn-cta"
+          style={{ fontSize: "10px", padding: "10px 16px" }}
+        >
+          {isLoading ? <span className="blink">█</span> : "SEND"}
+        </button>
       </form>
     </div>
   );

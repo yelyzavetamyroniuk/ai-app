@@ -6,43 +6,18 @@ export default function SignInPage() {
       className="flex min-h-[calc(100vh-56px)] flex-col items-center justify-center px-4"
       style={{ backgroundColor: "var(--bg)" }}
     >
-      <div className="w-full max-w-sm space-y-6 pixel-card">
+      <div className="w-full max-w-sm space-y-6 pixel-card" style={{ border: "3px solid #c0392b" }}>
         <div className="text-center space-y-3">
-          <p
-            className="font-pixel"
-            style={{ color: "var(--accent)", fontSize: "10px" }}
-          >
-            *** PLAYER LOGIN ***
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-vt323), 'Courier New', monospace",
-              fontSize: "22px",
-              color: "var(--text)",
-            }}
-          >
-            Insert coin to track your work day
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-vt323), 'Courier New', monospace",
-              fontSize: "17px",
-              color: "var(--text-muted)",
-            }}
-          >
-            Sign in with GitHub to continue
+          <h1 className="font-pixel" style={{ color: "#c0392b", fontSize: "11px", lineHeight: 2 }}>
+            PLAYER LOGIN
+          </h1>
+          <p className="font-pixel" style={{ fontSize: "9px", color: "#555", lineHeight: 2 }}>
+            Sign in to track your work damage
           </p>
         </div>
         <SignInButtons />
-        <p
-          className="text-center"
-          style={{
-            fontFamily: "var(--font-vt323), 'Courier New', monospace",
-            fontSize: "16px",
-            color: "var(--text-dim)",
-          }}
-        >
-          © 2025 WORK DAMAGE REPORT v1.0
+        <p className="font-pixel text-center" style={{ fontSize: "8px", color: "var(--text-dim)" }}>
+          Work Damage Report © 2025
         </p>
       </div>
     </main>
