@@ -1,193 +1,334 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { WDRAnalysis } from "@/types";
 
 const ACTION_META = {
-  focus: { emoji: "🎯", label: "Час на фокус", desc: "Захисти свій час від переривань" },
-  priority: { emoji: "📋", label: "Пріоритизація", desc: "Визнач що важливо зараз" },
-  recovery: { emoji: "🌿", label: "План відновлення", desc: "Подбай про себе сьогодні" },
-  boundaries: { emoji: "🔒", label: "Встановлення меж", desc: "Повідом команду про ліміти" },
+  focus:     { label: "FOCUS TIME",    desc: "Protect your deep work hours" },
+  priority:  { label: "PRIORITIZE",   desc: "Align on what matters now" },
+  recovery:  { label: "RECOVERY",     desc: "Recharge before tomorrow" },
+  boundaries:{ label: "SET LIMITS",   desc: "Communicate your capacity" },
 };
 
-function scoreColor(pct: number): string {
-  if (pct <= 30) return "var(--green)";
-  if (pct <= 60) return "var(--yellow)";
-  if (pct <= 80) return "var(--orange)";
-  return "var(--red)";
+function barColor(pct: number): string {
+  if (pct <= 30) return "#4cca6a";
+  if (pct <= 60) return "#ffd700";
+  if (pct <= 80) return "#ff9800";
+  return "#e94560";
 }
 
-function scoreLabel(score: number): { emoji: string; text: string } {
-  if (score <= 20) return { emoji: "😌", text: "Легкий день" };
-  if (score <= 40) return { emoji: "🙂", text: "Норм" };
-  if (score <= 60) return { emoji: "😤", text: "Напруженно" };
-  if (score <= 80) return { emoji: "😵", text: "Важкувато" };
-  return { emoji: "🤯", text: "Ну і деньок..." };
+function scoreLabel(score: number) {
+  if (score <= 20) return { label: "LIGHT DAY",    color: "#4cca6a" };
+  if (score <= 40) return { label: "MANAGEABLE",   color: "#4cca6a" };
+  if (score <= 60) return { label: "ROUGH",        color: "#ffd700" };
+  if (score <= 80) return { label: "HEAVY",        color: "#ff9800" };
+  return                  { label: "!! CRITICAL !!", color: "#e94560" };
 }
 
+/* ── Typewriter hook ─────────────────────────────── */
+function useTypewriter(text: string, speed = 22) {
+  const [displayed, setDisplayed] = useState("");
+  useEffect(() => {
+    setDisplayed("");
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, speed]);
+  return displayed;
+}
+
+/* ── Pixel HP bar ────────────────────────────────── */
+function PixelHPBar({ percentage }: { percentage: number }) {
+  const total = 20;
+  const filled = Math.round((percentage / 100) * total);
+  const color = barColor(percentage);
+  return (
+    <div style={{ display: "flex", gap: "2px" }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            height: "12px",
+            backgroundColor: i < filled ? color : "#0f3460",
+            border: "1px solid #000",
+            boxShadow: i < filled ? `0 0 4px ${color}60` : "none",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── XP bar for damage score ─────────────────────── */
+function XPBar({ score }: { score: number }) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(score), 300);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const color = barColor(score);
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: "28px",
+        backgroundColor: "#0f3460",
+        border: "3px solid var(--border)",
+        boxShadow: "4px 4px 0px #000",
+      }}
+    >
+      <div
+        style={{
+          width: `${width}%`,
+          height: "100%",
+          backgroundColor: color,
+          transition: "width 1.8s steps(20)",
+          boxShadow: `0 0 8px ${color}80`,
+        }}
+      />
+      <div
+        className="font-pixel"
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "8px",
+          color: "#fff",
+          textShadow: "1px 1px 0px #000",
+        }}
+      >
+        {score} / 100 DAMAGE
+      </div>
+    </div>
+  );
+}
+
+/* ── Toast ───────────────────────────────────────── */
+function PixelToast({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div
+      className="font-pixel"
+      style={{
+        position: "fixed",
+        bottom: "24px",
+        right: "24px",
+        fontSize: "9px",
+        backgroundColor: "#0f3460",
+        border: "3px solid #4cca6a",
+        boxShadow: "4px 4px 0px #000",
+        padding: "12px 16px",
+        color: "#4cca6a",
+        animation: "toastIn 0.2s ease-out",
+        zIndex: 100,
+      }}
+    >
+      +1 COPIED TO CLIPBOARD ✓
+    </div>
+  );
+}
+
+/* ── Main component ──────────────────────────────── */
 export function DamageReport({ analysis }: { analysis: WDRAnalysis }) {
   const [copied, setCopied] = useState(false);
+  const culpritText = useTypewriter(analysis.culprit, 28);
+  const action = ACTION_META[analysis.actionType] ?? ACTION_META.focus;
+  const { label, color } = scoreLabel(analysis.damageScore);
 
   function handleCopy() {
     navigator.clipboard.writeText(analysis.slackMessage).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      setTimeout(() => setCopied(false), 3500);
     });
   }
 
-  const label = scoreLabel(analysis.damageScore);
-  const action = ACTION_META[analysis.actionType] ?? ACTION_META.focus;
-
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header */}
-      <div
-        className="rounded-2xl p-6 text-center card-accent-border"
-        style={{ backgroundColor: "var(--bg-card)" }}
-      >
-        <p className="text-sm font-medium mb-2" style={{ color: "var(--text-muted)" }}>
-          📉 Damage Report
+      <PixelToast show={copied} />
+
+      {/* Score header */}
+      <div className="pixel-card text-center space-y-4" style={{ border: `3px solid ${color}` }}>
+        <p className="font-pixel" style={{ color: "var(--text-muted)", fontSize: "8px" }}>
+          *** DAMAGE REPORT GENERATED ***
         </p>
-        <div className="text-7xl font-black mb-2" style={{ color: scoreColor(analysis.damageScore) }}>
+        <p
+          className="font-pixel"
+          style={{ fontSize: "40px", color, textShadow: `0 0 20px ${color}80`, lineHeight: 1 }}
+        >
           {analysis.damageScore}
-          <span className="text-3xl" style={{ color: "var(--text-muted)" }}>%</span>
-        </div>
-        <p className="text-xl font-semibold" style={{ color: "var(--text)" }}>
-          {label.emoji} {label.text}
         </p>
+        <p className="font-pixel" style={{ color, fontSize: "10px" }}>{label}</p>
+
         {analysis.damageScore > 80 && (
           <div
-            className="mt-3 inline-block px-4 py-1.5 rounded-full text-sm font-medium"
-            style={{ backgroundColor: "rgba(239,68,68,0.15)", color: "var(--red)", border: "1px solid rgba(239,68,68,0.3)" }}
+            className="font-pixel blink"
+            style={{
+              border: `3px solid #e94560`,
+              padding: "8px",
+              color: "#e94560",
+              fontSize: "9px",
+            }}
           >
-            🤯 Ну і деньок...
+            !! WARNING: CRITICAL DAMAGE DETECTED !!
           </div>
         )}
+
+        <XPBar score={analysis.damageScore} />
       </div>
 
       {/* Factors */}
-      <div
-        className="rounded-2xl p-5 card-glow"
-        style={{ backgroundColor: "var(--bg-card)" }}
-      >
-        <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
-          📊 Основні фактори
-        </h3>
-        <div className="space-y-3">
-          {analysis.factors.map((factor, i) => (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm" style={{ color: "var(--text)" }}>
-                  {factor.emoji} {factor.name}
-                </span>
-                <span className="text-xs font-mono font-bold" style={{ color: scoreColor(factor.percentage) }}>
-                  {factor.percentage}%
-                </span>
-              </div>
-              <div
-                className="h-2 rounded-full overflow-hidden"
-                style={{ backgroundColor: "var(--bg-card-2)" }}
+      <div className="pixel-card space-y-4">
+        <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
+          &gt; DAMAGE FACTORS
+        </p>
+        {analysis.factors.map((factor, i) => (
+          <div key={i} className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span
+                style={{
+                  fontFamily: "var(--font-vt323), 'Courier New', monospace",
+                  fontSize: "18px",
+                  color: "var(--text)",
+                }}
               >
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${factor.percentage}%`,
-                    backgroundColor: scoreColor(factor.percentage),
-                    boxShadow: `0 0 8px ${scoreColor(factor.percentage)}60`,
-                  }}
-                />
-              </div>
+                {factor.emoji} {factor.name}
+              </span>
+              <span
+                className="font-pixel"
+                style={{ fontSize: "9px", color: barColor(factor.percentage) }}
+              >
+                {factor.percentage}%
+              </span>
             </div>
-          ))}
-        </div>
+            <PixelHPBar percentage={factor.percentage} />
+          </div>
+        ))}
       </div>
 
-      {/* Main factor + culprit */}
+      {/* Main factor + Culprit */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div
-          className="rounded-2xl p-5 card-glow"
-          style={{ backgroundColor: "var(--bg-card)" }}
-        >
-          <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>
-            🎯 Головний фактор дня
+        <div className="pixel-card space-y-2">
+          <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "7px" }}>
+            &gt; MAIN FACTOR
           </p>
-          <p className="text-base font-semibold" style={{ color: "var(--text)" }}>
+          <p
+            style={{
+              fontFamily: "var(--font-vt323), 'Courier New', monospace",
+              fontSize: "20px",
+              color: "var(--text)",
+            }}
+          >
             {analysis.mainFactor}
           </p>
         </div>
-        <div
-          className="rounded-2xl p-5 card-glow"
-          style={{ backgroundColor: "var(--bg-card)" }}
-        >
-          <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>
-            🏆 Мем дня
+        <div className="pixel-card space-y-2" style={{ border: "3px solid var(--yellow)" }}>
+          <p className="font-pixel" style={{ color: "var(--yellow)", fontSize: "7px" }}>
+            &gt; ACHIEVEMENT UNLOCKED
           </p>
           <p
-            className="text-sm italic leading-relaxed"
-            style={{ color: "var(--accent-2)" }}
+            style={{
+              fontFamily: "var(--font-vt323), 'Courier New', monospace",
+              fontSize: "18px",
+              color: "var(--yellow)",
+              minHeight: "60px",
+            }}
           >
-            &ldquo;{analysis.culprit}&rdquo;
+            &ldquo;{culpritText}
+            <span className="blink">_</span>&rdquo;
           </p>
         </div>
       </div>
 
       {/* Recommendations */}
-      <div
-        className="rounded-2xl p-5 card-glow"
-        style={{ backgroundColor: "var(--bg-card)" }}
-      >
-        <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text-muted)" }}>
-          💡 Рекомендації
-        </h3>
-        <ul className="space-y-2.5">
+      <div className="pixel-card space-y-4">
+        <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
+          &gt; RECOMMENDED ACTIONS
+        </p>
+        <div className="space-y-3">
           {analysis.recommendations.map((rec, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text)" }}>
+            <div key={i} className="flex items-start gap-3">
               <span
-                className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ backgroundColor: "var(--accent-glow)", color: "var(--accent-2)" }}
+                className="font-pixel flex-shrink-0"
+                style={{
+                  fontSize: "8px",
+                  color: "#fff",
+                  backgroundColor: "var(--accent)",
+                  border: "2px solid #fff",
+                  boxShadow: "2px 2px 0px #000",
+                  padding: "2px 6px",
+                  minWidth: "28px",
+                  textAlign: "center",
+                }}
               >
-                {i + 1}
+                {String(i + 1).padStart(2, "0")}
               </span>
-              {rec}
-            </li>
+              <p
+                style={{
+                  fontFamily: "var(--font-vt323), 'Courier New', monospace",
+                  fontSize: "18px",
+                  color: "var(--text)",
+                  lineHeight: "1.4",
+                }}
+              >
+                {rec}
+              </p>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
 
-      {/* Action + Slack message */}
-      <div
-        className="rounded-2xl p-5 card-glow"
-        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-accent)" }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">{action.emoji}</span>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: "var(--accent-2)" }}>
-              {action.label}
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{action.desc}</p>
-          </div>
+      {/* Action message */}
+      <div className="pixel-card-accent space-y-4">
+        <div>
+          <p className="font-pixel" style={{ color: "var(--accent)", fontSize: "8px" }}>
+            &gt; MISSION: {action.label}
+          </p>
+          <p
+            style={{
+              fontFamily: "var(--font-vt323), 'Courier New', monospace",
+              fontSize: "16px",
+              color: "var(--text-muted)",
+              marginTop: "4px",
+            }}
+          >
+            {action.desc}
+          </p>
         </div>
         <div
-          className="rounded-xl p-4 mb-3 text-sm leading-relaxed whitespace-pre-wrap"
           style={{
             backgroundColor: "var(--bg-card-2)",
-            border: "1px solid var(--border)",
+            border: "3px solid var(--border)",
+            boxShadow: "inset 2px 2px 0px #000",
+            padding: "12px 14px",
+            fontFamily: "var(--font-vt323), 'Courier New', monospace",
+            fontSize: "18px",
             color: "var(--text)",
+            lineHeight: "1.5",
+            whiteSpace: "pre-wrap",
           }}
         >
           {analysis.slackMessage}
         </div>
         <button
           onClick={handleCopy}
-          className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+          className="pixel-btn w-full"
           style={{
-            backgroundColor: copied ? "rgba(34,197,94,0.15)" : "var(--accent-glow)",
-            border: `1px solid ${copied ? "rgba(34,197,94,0.4)" : "var(--border-accent)"}`,
-            color: copied ? "var(--green)" : "var(--accent-2)",
+            fontSize: "9px",
+            padding: "12px",
+            borderColor: copied ? "#4cca6a" : "var(--border)",
+            color: copied ? "#4cca6a" : "var(--text)",
+            backgroundColor: copied ? "rgba(76,202,106,0.1)" : "var(--bg-card-2)",
           }}
         >
-          {copied ? "✅ Скопійовано! Тепер вставляй і йди пити каву ☕" : "📋 Копіювати"}
+          {copied ? "COPIED! GO GET COFFEE ☕" : "[ COPY TO CLIPBOARD ]"}
         </button>
       </div>
     </div>

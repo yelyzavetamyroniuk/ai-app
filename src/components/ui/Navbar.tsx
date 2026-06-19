@@ -8,42 +8,49 @@ export async function Navbar() {
   return (
     <nav
       style={{
-        borderBottom: "1px solid var(--border)",
-        backgroundColor: "rgba(8, 8, 13, 0.85)",
-        backdropFilter: "blur(12px)",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
+        backgroundColor: "#0f3460",
+        borderBottom: "3px solid #e94560",
+        boxShadow: "0 4px 0px #000",
       }}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-xl">📉</span>
+        <Link href="/" className="flex items-center gap-3">
           <span
-            className="text-sm font-bold tracking-tight"
-            style={{ color: "var(--accent-2)" }}
+            className="font-pixel text-xs tracking-tight"
+            style={{ color: "#e94560", fontSize: "11px" }}
           >
             WDR
           </span>
           <span
-            className="hidden sm:block text-xs font-medium"
-            style={{ color: "var(--text-muted)" }}
+            style={{
+              color: "#aaa",
+              fontFamily: "var(--font-vt323), 'Courier New', monospace",
+              fontSize: "16px",
+            }}
+            className="hidden sm:block"
           >
-            Work Damage Report
+            WORK DAMAGE REPORT
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {session?.user ? (
             <>
               <Link
                 href="/dashboard"
-                className="text-sm transition-colors hover:opacity-100"
-                style={{ color: "var(--text-muted)" }}
+                className="pixel-btn"
+                style={{ fontSize: "8px", padding: "6px 12px" }}
               >
-                Dashboard
+                DASHBOARD
               </Link>
-              <span className="text-xs hidden sm:block" style={{ color: "var(--text-dim)" }}>
+              <span
+                className="hidden sm:block"
+                style={{
+                  color: "var(--text-dim)",
+                  fontFamily: "var(--font-vt323), 'Courier New', monospace",
+                  fontSize: "16px",
+                }}
+              >
                 {session.user.email}
               </span>
               <form
@@ -54,35 +61,16 @@ export async function Navbar() {
               >
                 <button
                   type="submit"
-                  className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-                  style={{
-                    color: "var(--text-muted)",
-                    border: "1px solid var(--border)",
-                    backgroundColor: "transparent",
-                  }}
-                  onMouseOver={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-accent)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
-                  }}
-                  onMouseOut={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)";
-                  }}
+                  className="pixel-btn"
+                  style={{ fontSize: "8px", padding: "6px 12px", color: "var(--text-muted)" }}
                 >
-                  Вийти
+                  EXIT
                 </button>
               </form>
             </>
           ) : (
-            <Link
-              href="/sign-in"
-              className="text-sm px-4 py-2 rounded-lg font-medium transition-all"
-              style={{
-                backgroundColor: "var(--accent)",
-                color: "white",
-              }}
-            >
-              Увійти
+            <Link href="/sign-in" className="pixel-btn pixel-btn-primary" style={{ fontSize: "8px" }}>
+              START
             </Link>
           )}
         </div>

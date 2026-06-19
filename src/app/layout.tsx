@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Press_Start_2P, VT323 } from "next/font/google";
 import { Navbar } from "@/components/ui/Navbar";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const pressStart2P = Press_Start_2P({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-pixel",
+});
+
+const vt323 = VT323({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-vt323",
+});
 
 export const metadata: Metadata = {
   title: "Work Damage Report",
@@ -12,8 +22,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
+    <html lang="uk" className={`${pressStart2P.variable} ${vt323.variable} h-full`}>
+      <body className="min-h-full flex flex-col">
         <Navbar />
         {children}
       </body>

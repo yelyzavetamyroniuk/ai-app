@@ -5,46 +5,46 @@ import type { WDRAnalysis } from "@/types";
 import { DamageReport } from "./DamageReport";
 
 const MOODS = [
-  { value: 0, emoji: "😫", label: "Жахливо" },
-  { value: 1, emoji: "😕", label: "Погано" },
-  { value: 2, emoji: "😐", label: "Нормально" },
-  { value: 3, emoji: "😀", label: "Добре" },
-  { value: 4, emoji: "😃", label: "Чудово" },
+  { value: 4, label: "GREAT" },
+  { value: 3, label: "GOOD" },
+  { value: 2, label: "MEH" },
+  { value: 1, label: "BAD" },
+  { value: 0, label: "CRITICAL" },
 ];
 
 const STRESS_LEVELS = [
-  { value: "Спокійно", emoji: "😌" },
-  { value: "Нормально", emoji: "🙂" },
-  { value: "Напружено", emoji: "😤" },
-  { value: "Тривожно", emoji: "😰" },
-  { value: "Перевантаження", emoji: "🤯" },
-  { value: "Критично", emoji: "😵" },
+  { value: "Спокійно",      label: "CALM",     color: "#4cca6a" },
+  { value: "Нормально",     label: "OK",       color: "#aaaaaa" },
+  { value: "Напружено",     label: "TENSE",    color: "#ffd700" },
+  { value: "Тривожно",      label: "ANXIOUS",  color: "#ff9800" },
+  { value: "Перевантаження",label: "OVERLOAD", color: "#e94560", shake: true },
+  { value: "Критично",      label: "CRITICAL", color: "#e94560", shake: true, blink: true },
 ];
 
 const ANNOYANCES = [
-  { value: "🧑‍💼 Комунікація з командою", emoji: "🧑‍💼", label: "Комунікація з командою" },
-  { value: "📅 Багато зустрічей", emoji: "📅", label: "Багато зустрічей" },
-  { value: "📊 Пріоритети та дедлайни", emoji: "📊", label: "Пріоритети та дедлайни" },
-  { value: "🐞 Неочікувані проблеми", emoji: "🐞", label: "Неочікувані проблеми" },
-  { value: "🏠 Особисті справи", emoji: "🏠", label: "Особисті справи" },
-  { value: "🎯 Фокус мод", emoji: "🎯", label: "Фокус мод" },
-  { value: "🤷 Важко сказати", emoji: "🤷", label: "Важко сказати" },
-  { value: "🔥 Все одразу", emoji: "🔥", label: "Все одразу" },
+  { value: "🧑‍💼 Комунікація з командою", label: "TEAM COMMS" },
+  { value: "📅 Багато зустрічей",         label: "TOO MANY MEETINGS" },
+  { value: "📊 Пріоритети та дедлайни",   label: "DEADLINES" },
+  { value: "🐞 Неочікувані проблеми",     label: "UNEXPECTED BUGS" },
+  { value: "🏠 Особисті справи",         label: "PERSONAL STUFF" },
+  { value: "🎯 Фокус мод",               label: "FOCUS MODE" },
+  { value: "🤷 Важко сказати",           label: "HARD TO SAY" },
+  { value: "🔥 Все одразу",              label: "EVERYTHING AT ONCE" },
 ];
 
 function distractionsLabel(val: number): string {
   const labels = [
-    "Не відволікали 🌿",
-    "Раз або два",
-    "Кілька разів",
-    "Досить часто",
-    "Постійно",
-    "Часто",
-    "Складно рахувати",
-    "Майже без перерв",
-    "Хаос",
-    "Критично",
-    "Не дали навіть пообідати 🤯",
+    "NONE",
+    "1-2 TIMES",
+    "A FEW TIMES",
+    "OFTEN",
+    "CONSTANTLY",
+    "VERY OFTEN",
+    "LOST COUNT",
+    "NON-STOP",
+    "CHAOS",
+    "CRITICAL",
+    "DIDN'T EAT LUNCH",
   ];
   return labels[Math.min(val, 10)];
 }
@@ -71,12 +71,21 @@ export function CheckinForm() {
     annoyances: [],
     comment: "",
   });
+  const [isShaking, setIsShaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<WDRAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleStressSelect(value: string, shake?: boolean) {
+    setField("stressLevel", value);
+    if (shake) {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
+    }
   }
 
   function toggleAnnoyance(val: string) {
@@ -111,18 +120,18 @@ export function CheckinForm() {
       });
 
       if (res.status === 401) {
-        setError("Потрібно увійти через GitHub, щоб генерувати звіти.");
+        setError("ERROR: AUTHENTICATION REQUIRED. Please sign in.");
         return;
       }
       if (!res.ok) {
-        setError("Щось пішло не так. Спробуй ще раз.");
+        setError("ERROR: SERVER FAILURE. Try again.");
         return;
       }
 
       const data = await res.json();
       setResult(data.analysis);
     } catch {
-      setError("Помилка з'єднання. Перевір інтернет і спробуй знову.");
+      setError("ERROR: CONNECTION FAILED. Check network.");
     } finally {
       setIsLoading(false);
     }
@@ -130,276 +139,222 @@ export function CheckinForm() {
 
   if (result) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <DamageReport analysis={result} />
         <button
           onClick={() => setResult(null)}
-          className="w-full py-3 rounded-xl text-sm font-medium transition-all"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            color: "var(--text-muted)",
-          }}
+          className="pixel-btn w-full"
+          style={{ fontSize: "9px", padding: "12px" }}
         >
-          ← Новий чекін
+          &lt;&lt; NEW CHECKIN
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* 1. Mood */}
-      <FormCard>
-        <Question num={1} text="Як ти сьогодні?" />
-        <div className="flex justify-between gap-2">
-          {MOODS.map((m) => (
-            <button
-              key={m.value}
-              type="button"
-              onClick={() => setField("mood", m.value)}
-              className="flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all text-2xl sm:text-3xl"
-              style={{
-                backgroundColor: form.mood === m.value ? "var(--accent-glow)" : "var(--bg-card-2)",
-                border: `1px solid ${form.mood === m.value ? "var(--border-accent)" : "var(--border)"}`,
-                transform: form.mood === m.value ? "scale(1.08)" : "scale(1)",
-              }}
-              title={m.label}
-            >
-              {m.emoji}
-              <span className="hidden sm:block text-xs" style={{ color: "var(--text-muted)", fontSize: "10px" }}>
-                {m.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </FormCard>
+    <div className={isShaking ? "shake" : ""}>
+      <form onSubmit={handleSubmit} className="space-y-4">
 
-      {/* 2. Sleep */}
-      <FormCard>
-        <Question num={2} text="Скільки годин спав/ла?" />
-        <SliderField
-          value={form.sleepHours}
-          min={0}
-          max={10}
-          step={0.5}
-          onChange={(v) => setField("sleepHours", v)}
-          leftLabel="0 год"
-          rightLabel="10+ год"
-          displayValue={`${form.sleepHours} год`}
-        />
-      </FormCard>
-
-      {/* 3. Meetings */}
-      <FormCard>
-        <Question num={3} text="Скільки зустрічей було сьогодні?" />
-        <SliderField
-          value={form.meetings}
-          min={0}
-          max={8}
-          step={1}
-          onChange={(v) => setField("meetings", v)}
-          leftLabel="0"
-          rightLabel="8+"
-          displayValue={form.meetings === 0 ? "Жодної 🙌" : form.meetings >= 8 ? "8+ 😱" : `${form.meetings}`}
-        />
-      </FormCard>
-
-      {/* 4. Work hours */}
-      <FormCard>
-        <Question num={4} text="Скільки годин працював/ла?" />
-        <SliderField
-          value={form.workHours}
-          min={0}
-          max={12}
-          step={0.5}
-          onChange={(v) => setField("workHours", v)}
-          leftLabel="0 год"
-          rightLabel="12+ год"
-          displayValue={`${form.workHours} год`}
-        />
-      </FormCard>
-
-      {/* 5. Distractions */}
-      <FormCard>
-        <Question num={5} text="Скільки разів тебе відволікали?" />
-        <SliderField
-          value={form.distractions}
-          min={0}
-          max={10}
-          step={1}
-          onChange={(v) => setField("distractions", v)}
-          leftLabel="Не відволікали"
-          rightLabel="Не дали пообідати"
-          displayValue={distractionsLabel(form.distractions)}
-        />
-      </FormCard>
-
-      {/* 6. Stress */}
-      <FormCard>
-        <Question num={6} text="Рівень стресу:" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {STRESS_LEVELS.map((s) => (
-            <button
-              key={s.value}
-              type="button"
-              onClick={() => setField("stressLevel", s.value)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all"
-              style={{
-                backgroundColor: form.stressLevel === s.value ? "var(--accent-glow)" : "var(--bg-card-2)",
-                border: `1px solid ${form.stressLevel === s.value ? "var(--border-accent)" : "var(--border)"}`,
-                color: "var(--text)",
-              }}
-            >
-              <span className="text-lg">{s.emoji}</span>
-              <span style={{ color: form.stressLevel === s.value ? "var(--accent-2)" : "var(--text)" }}>
-                {s.value}
-              </span>
-            </button>
-          ))}
-        </div>
-      </FormCard>
-
-      {/* 7. Annoyances */}
-      <FormCard>
-        <Question num={7} text="Що найбільше вплинуло на твій день?" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {ANNOYANCES.map((a) => {
-            const selected = form.annoyances.includes(a.value);
-            return (
+        {/* 1. Mood */}
+        <PixelSection label="01 // HOW ARE YOU TODAY?">
+          <div className="flex gap-2">
+            {MOODS.map((m) => (
               <button
-                key={a.value}
+                key={m.value}
                 type="button"
-                onClick={() => toggleAnnoyance(a.value)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-all"
-                style={{
-                  backgroundColor: selected ? "var(--accent-glow)" : "var(--bg-card-2)",
-                  border: `1px solid ${selected ? "var(--border-accent)" : "var(--border)"}`,
-                  color: selected ? "var(--accent-2)" : "var(--text)",
-                }}
+                onClick={() => setField("mood", m.value)}
+                className={`pixel-btn flex-1 ${form.mood === m.value ? "pixel-btn-selected" : ""}`}
+                style={{ fontSize: "8px", padding: "10px 4px" }}
               >
-                <span className="text-base">{a.emoji}</span>
-                {a.label}
-                {selected && <span className="ml-auto text-xs">✓</span>}
+                {form.mood === m.value ? "▶" : " "} {m.label}
               </button>
-            );
-          })}
-        </div>
-      </FormCard>
+            ))}
+          </div>
+        </PixelSection>
 
-      {/* 8. Comment */}
-      <FormCard>
-        <Question num={8} text="Коментар (необов'язково)" />
-        <textarea
-          value={form.comment}
-          onChange={(e) => setField("comment", e.target.value)}
-          placeholder="Що ще хочеш додати про свій день?"
-          rows={3}
-          maxLength={500}
-          className="w-full rounded-xl px-4 py-3 text-sm resize-none outline-none transition-all"
-          style={{
-            backgroundColor: "var(--bg-input)",
-            border: "1px solid var(--border)",
-            color: "var(--text)",
-          }}
-          onFocus={(e) => { e.target.style.borderColor = "var(--border-accent)"; }}
-          onBlur={(e) => { e.target.style.borderColor = "var(--border)"; }}
-        />
-        <p className="text-right text-xs mt-1" style={{ color: "var(--text-dim)" }}>
-          {form.comment.length}/500
-        </p>
-      </FormCard>
+        {/* 2. Sleep */}
+        <PixelSection label="02 // SLEEP HOURS">
+          <PixelSlider
+            value={form.sleepHours}
+            min={0} max={10} step={0.5}
+            onChange={(v) => setField("sleepHours", v)}
+            displayValue={`${form.sleepHours} HRS`}
+            leftLabel="0" rightLabel="10+"
+          />
+        </PixelSection>
 
-      {error && (
-        <div
-          className="rounded-xl px-4 py-3 text-sm"
+        {/* 3. Meetings */}
+        <PixelSection label="03 // MEETINGS TODAY">
+          <PixelSlider
+            value={form.meetings}
+            min={0} max={8} step={1}
+            onChange={(v) => setField("meetings", v)}
+            displayValue={form.meetings === 0 ? "ZERO (LUCKY)" : form.meetings >= 8 ? "8+ (RIP)" : String(form.meetings)}
+            leftLabel="0" rightLabel="8+"
+          />
+        </PixelSection>
+
+        {/* 4. Work hours */}
+        <PixelSection label="04 // WORK HOURS">
+          <PixelSlider
+            value={form.workHours}
+            min={0} max={12} step={0.5}
+            onChange={(v) => setField("workHours", v)}
+            displayValue={`${form.workHours} HRS`}
+            leftLabel="0" rightLabel="12+"
+          />
+        </PixelSection>
+
+        {/* 5. Distractions */}
+        <PixelSection label="05 // TIMES INTERRUPTED">
+          <PixelSlider
+            value={form.distractions}
+            min={0} max={10} step={1}
+            onChange={(v) => setField("distractions", v)}
+            displayValue={distractionsLabel(form.distractions)}
+            leftLabel="NONE" rightLabel="CRITICAL"
+          />
+        </PixelSection>
+
+        {/* 6. Stress */}
+        <PixelSection label="06 // STRESS LEVEL">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {STRESS_LEVELS.map((s) => {
+              const selected = form.stressLevel === s.value;
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => handleStressSelect(s.value, s.shake)}
+                  className={`pixel-btn ${selected ? "pixel-btn-selected" : ""} ${s.blink && selected ? "blink" : ""}`}
+                  style={{
+                    fontSize: "8px",
+                    borderColor: selected ? "#fff" : s.color,
+                    color: selected ? "#fff" : s.color,
+                    backgroundColor: selected ? s.color : "var(--bg-card-2)",
+                  }}
+                >
+                  {selected ? "▶" : "○"} {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </PixelSection>
+
+        {/* 7. Annoyances */}
+        <PixelSection label="07 // WHAT DAMAGED YOUR DAY?">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {ANNOYANCES.map((a) => {
+              const selected = form.annoyances.includes(a.value);
+              return (
+                <button
+                  key={a.value}
+                  type="button"
+                  onClick={() => toggleAnnoyance(a.value)}
+                  className={`pixel-btn text-left ${selected ? "pixel-btn-selected" : ""}`}
+                  style={{ fontSize: "8px", justifyContent: "flex-start", padding: "10px 12px" }}
+                >
+                  {selected ? "[X]" : "[ ]"} {a.label}
+                </button>
+              );
+            })}
+          </div>
+        </PixelSection>
+
+        {/* 8. Comment */}
+        <PixelSection label="08 // ADDITIONAL NOTES (OPTIONAL)">
+          <textarea
+            value={form.comment}
+            onChange={(e) => setField("comment", e.target.value)}
+            placeholder="> TYPE HERE..."
+            rows={3}
+            maxLength={500}
+            className="pixel-input"
+            style={{ resize: "none" }}
+          />
+          <p
+            className="text-right mt-1"
+            style={{
+              fontFamily: "var(--font-pixel), 'Courier New', monospace",
+              fontSize: "8px",
+              color: "var(--text-dim)",
+            }}
+          >
+            {form.comment.length}/500
+          </p>
+        </PixelSection>
+
+        {/* Error */}
+        {error && (
+          <div
+            className="pixel-card"
+            style={{ border: "3px solid var(--red)", color: "var(--red)" }}
+          >
+            <p className="font-pixel" style={{ fontSize: "8px" }}>{error}</p>
+          </div>
+        )}
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="pixel-btn pixel-btn-primary w-full"
           style={{
-            backgroundColor: "rgba(239,68,68,0.1)",
-            border: "1px solid rgba(239,68,68,0.3)",
-            color: "var(--red)",
+            fontSize: "10px",
+            padding: "18px",
+            boxShadow: isLoading ? "0px 0px 0px #000" : "6px 6px 0px #000",
+            transform: isLoading ? "translate(4px, 4px)" : undefined,
           }}
         >
-          {error}
-        </div>
-      )}
-
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full py-4 rounded-2xl text-base font-semibold transition-all disabled:opacity-60"
-        style={{
-          backgroundColor: "var(--accent)",
-          color: "white",
-          boxShadow: isLoading ? "none" : "0 0 24px rgba(124,106,255,0.35)",
-        }}
-      >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            Аналізую твій день...
-          </span>
-        ) : (
-          "🔍 Згенерувати Damage Report"
-        )}
-      </button>
-    </form>
+          {isLoading ? (
+            <span className="flex items-center gap-3">
+              <span className="blink">█</span>
+              ANALYZING DAY... PLEASE WAIT
+              <span className="blink">█</span>
+            </span>
+          ) : (
+            "▶▶ GENERATE DAMAGE REPORT ◀◀"
+          )}
+        </button>
+      </form>
+    </div>
   );
 }
 
-function FormCard({ children }: { children: React.ReactNode }) {
+function PixelSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-2xl p-5 space-y-4 card-glow"
-      style={{ backgroundColor: "var(--bg-card)" }}
-    >
+    <div className="pixel-card space-y-4">
+      <p
+        className="font-pixel"
+        style={{ color: "var(--accent)", fontSize: "8px", borderBottom: "1px solid var(--accent)", paddingBottom: "8px" }}
+      >
+        {label}
+      </p>
       {children}
     </div>
   );
 }
 
-function Question({ num, text }: { num: number; text: string }) {
-  return (
-    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-      <span
-        className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold mr-2"
-        style={{ backgroundColor: "var(--accent-glow)", color: "var(--accent-2)" }}
-      >
-        {num}
-      </span>
-      {text}
-    </p>
-  );
-}
-
-function SliderField({
-  value,
-  min,
-  max,
-  step,
-  onChange,
-  leftLabel,
-  rightLabel,
-  displayValue,
+function PixelSlider({
+  value, min, max, step,
+  onChange, displayValue, leftLabel, rightLabel,
 }: {
-  value: number;
-  min: number;
-  max: number;
-  step: number;
+  value: number; min: number; max: number; step: number;
   onChange: (v: number) => void;
-  leftLabel: string;
-  rightLabel: string;
-  displayValue: string;
+  displayValue: string; leftLabel: string; rightLabel: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="text-center">
         <span
-          className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
+          className="font-pixel inline-block px-3 py-2"
           style={{
-            backgroundColor: "var(--accent-glow)",
-            color: "var(--accent-2)",
-            border: "1px solid var(--border-accent)",
+            fontSize: "9px",
+            backgroundColor: "var(--accent)",
+            color: "#fff",
+            border: "3px solid #fff",
+            boxShadow: "3px 3px 0px #000",
           }}
         >
           {displayValue}
@@ -407,13 +362,14 @@ function SliderField({
       </div>
       <input
         type="range"
-        min={min}
-        max={max}
-        step={step}
+        min={min} max={max} step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <div className="flex justify-between text-xs" style={{ color: "var(--text-muted)" }}>
+      <div
+        className="flex justify-between font-pixel"
+        style={{ fontSize: "7px", color: "var(--text-dim)" }}
+      >
         <span>{leftLabel}</span>
         <span>{rightLabel}</span>
       </div>
